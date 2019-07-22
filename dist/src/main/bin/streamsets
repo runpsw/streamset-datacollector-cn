@@ -1,0 +1,134 @@
+#!/bin/bash
+# Copyright 2017 StreamSets Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# resolve links - $0 may be a softlink
+PRG="${0}"
+
+while [ -h "${PRG}" ]; do
+  ls=`ls -ld "${PRG}"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "${PRG}"`/"$link"
+  fi
+done
+
+BASEDIR=`dirname ${PRG}`
+BASEDIR=`cd ${BASEDIR}/..;pwd`
+cd ${BASEDIR}
+
+while test $# -gt 0; do
+  case "$1" in
+    dc)
+      shift
+      exec ${BASEDIR}/libexec/_sdc "$@"
+      ;;
+    create-dc)
+      shift
+      exec ${BASEDIR}/libexec/_create-sdc "$@"
+      ;;
+    cli)
+      shift
+      exec ${BASEDIR}/libexec/_cli "$@"
+      ;;
+    jks-cs)
+      shift
+      echo ""
+      echo "WARNING: Sub-command jks-cs is deprecated, use 'streamsets stagelib-cli jks-credentialstore'"
+      echo ""
+      exec ${BASEDIR}/libexec/_stagelib_cli jks-credentialstore "$@"
+      ;;
+    sch)
+      shift
+      exec ${BASEDIR}/libexec/_sch "$@"
+      ;;
+    stagelibs)
+      shift
+      exec ${BASEDIR}/libexec/_stagelibs "$@"
+      ;;
+    show-vault-id)
+      shift
+      echo ""
+      echo "WARNING: Sub-command show-vault-id is deprecated, use 'streamsets stagelib-cli vault-credentialstore show-id'"
+      echo ""
+      exec ${BASEDIR}/libexec/_stagelib_cli vault-credentialstore show-id
+      ;;
+    setup-mapr)
+      shift
+      exec ${BASEDIR}/libexec/_mapr_setup
+      ;;
+    stagelib-cli)
+      shift
+      if [ ! -d "streamsets-libs/streamsets-datacollector-$1-lib" ];
+      then
+        echo ""
+        echo "Stage library $1 not found, available stage libraries are:"
+        echo ""
+        cd streamsets-libs
+        ls -d *lib | sed -e 's/^streamsets-datacollector-/  /' -e "s/-lib$//"
+        cd ..
+        echo ""
+        exit 1
+      fi
+      exec ${BASEDIR}/libexec/_stagelib_cli "$@"
+      ;;
+    help)
+      ${PRG} --help
+      exit 0
+      ;;
+    -help)
+      ${PRG} --help
+      exit 0
+      ;;
+    --help)
+      echo ""
+      echo "streamsets <SUB_COMMAND> [<SUB_COMMAND_ARGUMENTS>]"
+      echo ""
+      echo "  Sub-commands:"
+      echo ""
+      echo "    dc: Starts the Data Collector"
+      echo ""
+      echo "    create-dc: Creates new instance of Data Collector"
+      echo ""
+      echo "    cli: Data Collector CLI"
+      echo ""
+      echo "    jks-cs: Java Keystore Credential Store (DEPRECATED)"
+      echo ""
+      echo "    sch: Enable or Disable Control Hub integration"
+      echo ""
+      echo "    stagelibs: Data Collector Stage library installer"
+      echo ""
+      echo "    show-vault-id: Shows the user-id to authorize in Vault (DEPRECATED)"
+      echo ""
+      echo "    setup-mapr: Enables the MapR stage library for the detected"
+      echo "                MapR installation."
+      echo ""
+      echo "    stagelib-cli <STAGE LIB>: Runs the command line tool of the specified Stage Library if available."
+      echo ""
+      exit 0
+      ;;
+    *)
+      echo "Invalid sub-command"
+      ${PRG} -help
+      exit 1
+      ;;
+  esac
+done
+
+echo ""
+echo "Missing sub-command"
+${PRG} -help
+exit 1
